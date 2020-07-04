@@ -1,0 +1,22 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t tizot/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true tizot/react-test npm test -- --coverage
+
+after_success:
+  # build all images
+  - docker build -t tizot/multi-client ./client
+  - docker build -t tizot/multi-nginx ./nginx
+  - docker build -t tizot/multi-server ./server
+  - docker build -t tizot/multi-worker ./worker
+  # push them to Docker Hub
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  - docker push tizot/multi-client
+  - docker push tizot/multi-nginx
+  - docker push tizot/multi-server
+  - docker push tizot/multi-worker
